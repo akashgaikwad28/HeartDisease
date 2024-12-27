@@ -1,6 +1,8 @@
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from category_encoders import BinaryEncoder
 
 def preprocess_data(df):
     # Expected features
@@ -17,18 +19,32 @@ def preprocess_data(df):
     # Keep only the required features
     df = df[expected_features]
 
-    # One-hot encoding for categorical variables
-    categorical_features = ['Sex', 'RestingECG', 'ExerciseAngina', 'ST_Slope', 'ChestPainType_ATA']
+    # Initialize label encoder and binary encoder
+    label_encoder = LabelEncoder()
+    binary_encoder = BinaryEncoder()
+
+    # Apply Binary Encoding on 'ExerciseAngina' and 'Sex'
+    df['ExerciseAngina'] = binary_encoder.fit_transform(df['ExerciseAngina'])
+    df['Sex'] = binary_encoder.fit_transform(df['Sex'])
+
+    # Apply Label Encoding on 'RestingECG', 'ChestPainType_ATA', and 'ST_Slope'
+    df['RestingECG'] = label_encoder.fit_transform(df['RestingECG'])
+    df['ChestPainType_ATA'] = label_encoder.fit_transform(df['ChestPainType_ATA'])
+    df['ST_Slope'] = label_encoder.fit_transform(df['ST_Slope'])
+
+    # Numerical features to be scaled
     numerical_features = ['Age', 'RestingBP', 'Cholesterol', 'FastingBS', 'MaxHR', 'Oldpeak']
 
+    # Initialize the column transformer for scaling numerical features
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), numerical_features),
-            ('cat', OneHotEncoder(drop='first', sparse_output=False), categorical_features)
+            ('num', StandardScaler(), numerical_features)
         ],
         remainder='passthrough'
     )
 
-    # Apply transformations
+    # Apply the transformations and return the processed data
     processed_data = preprocessor.fit_transform(df)
-    return pd.DataFrame(processed_data, columns=numerical_features + preprocessor.named_transformers_['cat'].get_feature_names_out())
+    
+    # Return the DataFrame with appropriate column names
+    return pd.DataFrame(processed_data, columns=numerical_features + ['ExerciseAngina', 'Sex', 'RestingECG', 'ST_Slope', 'ChestPainType_ATA'])
