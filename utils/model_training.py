@@ -18,7 +18,7 @@ class ModelTrainer:
 
     def train_model(self):
         """Train the model using the fixed training data path"""
-        data_path = "Train_Data/heart_disease.csv"
+        data_path = "Train_Data_csv/heart_disease.csv"
         if not os.path.exists(data_path):
             raise FileNotFoundError(f"Training data not found at {data_path}")
 
