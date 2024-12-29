@@ -44,5 +44,11 @@ To run this project locally, follow these steps:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/heart_disease_prediction.git
-cd heart_disease_prediction
+git clone https://github.com/akashgaikwad28/akashgaikwad28-HeartDisease.git
+cd akashgaikwad28-HeartDisease
+```
+
+## Try the Application Online
+
+You can directly use the application online via this link: [Heart Disease Prediction App](https://heartfail.streamlit.app/)
+
