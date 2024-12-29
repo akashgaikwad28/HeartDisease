@@ -24,7 +24,7 @@ def main():
 def show_training_page():
     st.header("Model Training")
     
-    if not os.path.exists("Train_Data/heart_disease.csv"):
+    if not os.path.exists("Train_Data_csv/heart_disease.csv"):
         st.error("Training data file not found in Train_Data/heart_disease.csv")
         return
     
