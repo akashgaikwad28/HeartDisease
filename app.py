@@ -1,46 +1,99 @@
 import streamlit as st
 import pandas as pd
-from preprocess import preprocess_data
-from model import load_model, make_predictions
+import os
+from utils.model_training import ModelTrainer
+from utils.prediction import Predictor
 
-st.title("Heart Disease Prediction")
+def main():
+    st.set_page_config(
+        page_title="Heart Disease Prediction App",
+        page_icon="❤️",
+        layout="wide"
+    )
 
-# Upload CSV File
-uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+    st.title("❤️ Heart Disease Prediction App")
+    
+    st.sidebar.header("Navigation")
+    page = st.sidebar.radio("Select a page", ["Train Model", "Make Predictions"])
 
-if uploaded_file:
-    # Read the CSV file
-    user_data = pd.read_csv(uploaded_file)
-    st.write("Uploaded Data:")
-    st.dataframe(user_data)
+    if page == "Train Model":
+        show_training_page()
+    else:
+        show_prediction_page()
 
-    # Preprocess the data
-    st.write("Preprocessing data...")
-    try:
-        processed_data = preprocess_data(user_data)
-        st.write("Data after preprocessing:")
-        st.dataframe(processed_data)
-    except Exception as e:
-        st.error(f"Error during preprocessing: {e}")
+def show_training_page():
+    st.header("Model Training")
+    
+    if not os.path.exists("Train_Data/heart_disease.csv"):
+        st.error("Training data file not found in Train_Data/heart_disease.csv")
+        return
+    
+    if st.button("Train Model"):
+        try:
+            with st.spinner("Training model... Please wait."):
+                trainer = ModelTrainer()
+                accuracy, report = trainer.train_model()
+                
+                st.success(f"Model trained successfully! Accuracy: {accuracy * 100:.2f}%")
+                st.text("Detailed Classification Report:")
+                st.text(report)
+                
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
 
-    # Load pre-trained model
-    model = load_model("models/gradient_boosting_model.pkl")
+def show_prediction_page():
+    st.header("Make Predictions")
+    
+    if not os.path.exists("models/model.pkl"):
+        st.error("Model not found. Please train the model first.")
+        return
+    
+    st.info("""
+    ### Required Data Format
+    Your CSV file should include these columns:
+    - Age: Numeric
+    - Sex: 'M' or 'F'
+    - RestingBP: Numeric (resting blood pressure)
+    - Cholesterol: Numeric
+    - FastingBS: 0 or 1 (fasting blood sugar)
+    - RestingECG: Categorical
+    - MaxHR: Numeric (maximum heart rate)
+    - ExerciseAngina: 'Y' or 'N'
+    - Oldpeak: Numeric
+    - ST_Slope: Categorical
+    """)
 
-    # Make predictions
-    if st.button("Predict"):
-        st.write("Predicting...")
-        predictions = make_predictions(model, processed_data)
-        user_data['HeartDisease_Prediction'] = predictions
-        user_data['HeartDisease_Prediction'] = user_data['HeartDisease_Prediction'].map({1: "Yes", 0: "No"})
-        
-        st.write("Predictions:")
-        st.dataframe(user_data)
+    uploaded_file = st.file_uploader("Upload data for prediction (CSV)", type="csv")
+    
+    if uploaded_file:
+        try:
+            data = pd.read_csv(uploaded_file)
+            st.write("Preview of uploaded data:")
+            st.dataframe(data.head())
+            
+            if st.button("Make Predictions"):
+                with st.spinner("Generating predictions..."):
+                    predictor = Predictor()
+                    results = predictor.predict(data)
+                    
+                    st.success("Predictions generated successfully!")
+                    st.write("Results:")
+                    st.dataframe(results)
+                    
+                    # Download button for results
+                    csv = results.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        "Download Results",
+                        csv,
+                        "heart_disease_predictions.csv",
+                        "text/csv",
+                        key='download-csv'
+                    )
+                    
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
 
-        # Download results
-        csv = user_data.to_csv(index=False)
-        st.download_button(
-            label="Download Prediction Results",
-            data=csv,
-            file_name="heart_disease_predictions.csv",
-            mime="text/csv"
-        )
+if __name__ == "__main__":
+    # Create necessary directories
+    os.makedirs("models", exist_ok=True)
+    main()
